@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pop-ups Românticos</title>
+  <style>
+    :root {
+      --bg: #ffcccc;
+      --popup-bg: #fff0f3;
+      --text: #5b0a1d;
+      --accent: #e11d48;
+      --shadow: 0 12px 40px rgba(0,0,0,.15);
+      --radius: 16px;
+    }
+    html, body {
+      height: 100%; margin: 0; overflow: hidden;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text);
+    }
+    /* Corações flutuantes */
+    .hearts { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+    .heart {
+      position: absolute; bottom: -20px;
+      color: rgba(225,29,72,0.8);
+      animation: floatUp linear forwards;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-120vh) scale(1.5); opacity: 0; }
+    }
+    /* Popups */
+    .popup {
+      position: absolute; 
+      width: min(90vw, 380px);
+      background: var(--popup-bg); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding:20px; text-align:center;
+      opacity:0; transform: translate(-50%,-50%) scale(0.8);
+      animation: popupEnter 0.8s ease forwards; z-index:2;
+      left:50%; top:50%;
+    }
+    @keyframes popupEnter {
+      0% { opacity:0; transform: translate(-50%,-50%) scale(0.6); }
+      60% { opacity:1; transform: translate(-50%,-50%) scale(1.05); }
+      100% { opacity:1; transform: translate(-50%,-50%) scale(1); }
+    }
+    .title { font-size:1.2rem; font-weight:700; margin-bottom:8px; }
+    .desc { font-size:0.9rem; margin-bottom:14px; line-height:1.4; }
+    .actions { display:flex; justify-content:center; gap: 1rem; }
+    button {
+      font:inherit; border:none; border-radius:10px;
+      padding:8px 14px; cursor:pointer;
+      transition:transform .18s ease, background .2s;
+    }
+    button:active { transform: scale(.95); }
+    .btn-sim {
+      background: var(--accent); color:#fff; font-weight:700;
+    }
+    .btn-sim:hover { background:#be123c; }
+    .btn-nao {
+      background:#ffe4e6; color:var(--text);
+      position: fixed; z-index:9999;
+      transition:opacity .3s ease, transform .3s ease, left .6s ease, top .6s ease, font-size .3s ease, padding .3s ease;
+      font-size: 1rem;
+      padding: 8px 14px;
+    }
+    .btn-nao.hide {
+      opacity:0; transform: scale(0.5) rotate(-20deg);
+    }
+    /* Texto final romantico com efeito máquina de escrever */
+    .mensagem-final {
+      position: fixed; inset:0;
+      background: rgba(255,204,204,0.95);
+      display:flex; justify-content:center; align-items:center;
+      font-size:1.6rem; font-weight:bold; color:var(--text);
+      text-align:center; opacity:0; pointer-events:none;
+      z-index:99999;
+    }
+  </style>
+</head>
+<body>
+  <div class="hearts" id="hearts"></div>
+
+  <section class="popup">
+    <h2 class="title">Quer viver esse momento comigo? ❤️</h2>
+    <p class="desc">Clique em <strong>Sim</strong> e eu te levo a um lugar especial.</p>
+    <div class="actions">
+      <button id="sim" class="btn-sim">Sim</button>
+      <button id="nao" class="btn-nao">Não</button>
+    </div>
+  </section>
+
+  <audio id="soundSim" src="https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3"></audio>
+  <audio id="soundNao" src="https://www.myinstants.com/media/sounds/cartoon-pop.mp3"></audio>
+
+  <script>
+    const redirectURL = "https://www.youtube.com/watch?v=iyJDuJggiEM&list=RDQgmrq-LM2zg&index=2";
+    const soundSim = document.getElementById("soundSim");
+    const soundNao = document.getElementById("soundNao");
+    const naoBtn = document.getElementById("nao");
+
+    let escapeDistance = 100; // começa suave
+    let shrinkFactor = 1;     // fator de encolhimento do botão
+
+    function randomFarPosition(btn) {
+      const w = btn.offsetWidth, h = btn.offsetHeight;
+      const margin = 20;
+      const maxX = window.innerWidth - w - margin;
+      const maxY = window.innerHeight - h - margin;
+
+      // manda para cantos
+      const corners = [
+        {x: margin, y: margin},
+        {x: maxX, y: margin},
+        {x: margin, y: maxY},
+        {x: maxX, y: maxY}
+      ];
+      return corners[Math.floor(Math.random()*corners.length)];
+    }
+
+    function teleport(btn) {
+      soundNao.currentTime = 0;
+      soundNao.play();
+      btn.classList.add("hide");
+      setTimeout(() => {
+        const { x, y } = randomFarPosition(btn);
+        btn.style.left = x + "px";
+        btn.style.top = y + "px";
+        btn.classList.remove("hide");
+      }, 400);
+
+      // aumenta a distância mínima a cada fuga
+      escapeDistance += 20;
+      if (escapeDistance > 300) escapeDistance = 300; // limite
+
+      // encolhe o botão cada vez mais
+      shrinkFactor *= 0.9;
+      if (shrinkFactor < 0.4) shrinkFactor = 0.4; // limite mínimo
+      btn.style.fontSize = (1 * shrinkFactor) + "rem";
+      btn.style.padding = (8 * shrinkFactor) + "px " + (14 * shrinkFactor) + "px";
+    }
+
+    naoBtn.addEventListener("click", e => {
+      e.preventDefault();
+      teleport(naoBtn);
+    });
+
+    // foge quando o mouse chega perto
+    document.addEventListener("mousemove", e => {
+      const rect = naoBtn.getBoundingClientRect();
+      const dx = e.clientX - (rect.left + rect.width/2);
+      const dy = e.clientY - (rect.top + rect.height/2);
+      if (Math.hypot(dx, dy) < escapeDistance) teleport(naoBtn);
+    });
+
+    document.getElementById("sim").addEventListener("click", () => {
+      soundSim.currentTime = 0;
+      soundSim.play();
+      const msg = document.createElement("div");
+      msg.className = "mensagem-final";
+      document.body.appendChild(msg);
+      const text = "Minha escolha sempre será você, te amo ❤️";
+      let i = 0;
+      const typing = setInterval(() => {
+        msg.textContent += text[i++];
+        msg.style.opacity = 1;
+        if (i >= text.length) {
+          clearInterval(typing);
+          setTimeout(() => window.open(redirectURL, "_blank"), 1000);
+        }
+      }, 100);
+    });
+
+    // corações flutuantes
+    function createHeart() {
+      const heart = document.createElement("div");
+      heart.className = "heart";
+      heart.textContent = "❤️";
+      heart.style.left = Math.random()*100 + "vw";
+      heart.style.fontSize = (16+Math.random()*24) + "px";
+      heart.style.animationDuration = (4+Math.random()*6) + "s";
+      document.getElementById("hearts").appendChild(heart);
+      setTimeout(() => heart.remove(), 10000);
+    }
+    setInterval(createHeart, 700);
+  </script>
+</body>
+</html>
